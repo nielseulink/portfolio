@@ -1,7 +1,7 @@
 <?php
 
-test('the application returns a successful response', function () {
-    $response = $this->get('/');
-
-    $response->assertStatus(200);
+test('legacy welcome route is replaced by personal site home page', function () {
+    $this->get('/')
+        ->assertSuccessful()
+        ->assertDontSee("Let's get started");
 });

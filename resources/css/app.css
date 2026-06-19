@@ -1,9 +1,120 @@
 @import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/flux/stubs/resources/views/**/*.blade.php';
+@source '../../vendor/livewire/flux-pro/stubs/resources/views/**/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../../app/Livewire/**/*.php';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer components {
+    .prose-blog {
+        @apply max-w-none text-zinc-700 dark:text-zinc-300;
+
+        & h2 {
+            @apply mt-8 mb-3 text-xl font-semibold text-zinc-900 dark:text-zinc-100;
+        }
+
+        & h3 {
+            @apply mt-6 mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100;
+        }
+
+        & p {
+            @apply mb-4 leading-relaxed;
+        }
+
+        & ul {
+            @apply mb-4 list-disc space-y-1 ps-6;
+        }
+
+        & ol {
+            @apply mb-4 list-decimal space-y-1 ps-6;
+        }
+
+        & a {
+            @apply text-sky-600 underline underline-offset-2 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300;
+        }
+
+        & img {
+            @apply my-6 h-auto max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700;
+        }
+
+        & img.blog-image-sm {
+            @apply max-w-xs;
+        }
+
+        & img.blog-image-md {
+            @apply max-w-md;
+        }
+
+        & img.blog-image-lg {
+            @apply max-w-2xl;
+        }
+
+        & img.blog-image-full {
+            @apply w-full;
+        }
+
+        & :not(pre) > code {
+            @apply rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200;
+        }
+
+        & .code-block {
+            @apply mb-4 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700;
+        }
+
+        & .code-block-header {
+            @apply flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-100 px-3 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-800;
+        }
+
+        & .code-block-lang {
+            @apply font-mono font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+        }
+
+        & .code-block-copy {
+            @apply rounded-md px-2 py-1 font-medium text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-zinc-100;
+        }
+
+        & pre {
+            @apply m-0 overflow-x-auto bg-[#282c34] p-0 text-sm;
+        }
+
+        & pre code {
+            @apply block bg-transparent p-4 font-mono leading-relaxed;
+        }
+
+        & pre code.hljs {
+            @apply p-0;
+        }
+
+        & pre code.hljs table.hljs-ln td.hljs-ln-numbers {
+            padding: 0 1rem 0 0.875rem !important;
+            border-right: 1px solid rgb(63 63 70 / 0.8);
+            color: rgb(113 113 122);
+            text-align: right;
+            vertical-align: top;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        & pre code.hljs table.hljs-ln td.hljs-ln-code {
+            padding: 0 0.875rem 0 1.25rem !important;
+            vertical-align: top;
+            width: 100%;
+        }
+
+        & pre code.hljs table.hljs-ln td.hljs-ln-line {
+            @apply leading-relaxed;
+        }
+
+        & blockquote {
+            @apply my-4 border-s-4 border-zinc-300 ps-4 text-zinc-600 italic dark:border-zinc-600 dark:text-zinc-400;
+        }
+    }
 }
