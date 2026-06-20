@@ -20,7 +20,7 @@ test('blog index page is accessible', function () {
 test('blog index can filter posts by tag', function () {
     $this->get(route('blog.index', ['tag' => 'Node-RED']))
         ->assertSuccessful()
-        ->assertSee('Building a Button+ Node-RED module for EVCC energy flows');
+        ->assertSee('Building a Node-RED module for the Button+');
 });
 
 test('blog index shows all posts when tag filter is cleared', function () {
@@ -34,7 +34,7 @@ test('blog index shows all posts when tag filter is cleared', function () {
 test('blog show page displays a post', function () {
     $this->get(route('blog.show', 'buttonplus-nodered-evcc-energy-flow'))
         ->assertSuccessful()
-        ->assertSee('Building a Button+ Node-RED module for EVCC energy flows')
+        ->assertSee('Building a Node-RED module for the Button+')
         ->assertSee('Rendering larger SVG');
 });
 

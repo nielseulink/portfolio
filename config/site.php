@@ -10,7 +10,7 @@ return [
     'projects' => [
         [
             'name' => 'Button+ Node-RED',
-            'description' => 'Node-RED module for controlling Button+ devices over MQTT, with nodes for button presses, LEDs, display updates, page switching and EVCC-style energy flow rendering.',
+            'description' => 'Node-RED module for controlling Button+ devices over MQTT, with nodes for button presses, LEDs, display updates and page switching.',
             'url' => 'https://github.com/nielseulink/buttonplus-nodered',
             'link_label' => 'View on GitHub',
             'tags' => ['Button+', 'Node-RED', 'JavaScript', 'MQTT', 'Smarthome', 'Home Assistant'],

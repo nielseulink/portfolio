@@ -1,14 +1,16 @@
 ---
 
 id: 1
-title: "Building a Button+ Node-RED module for EVCC energy flows"
+title: "Building a Node-RED module for the Button+"
 slug: buttonplus-nodered-evcc-energy-flow
 excerpt: "How I built a Button+ Node-RED module and used it to render an EVCC-style energy flow by splitting a large SVG across multiple display items."
 published_at: "2026-06-18"
 tags: [Smarthome, EVCC, Button+, Node-RED, MQTT]
 ---
 
-I bought a Button+ a few months ago as a pre-order. The goal was to display the household agenda, control the lighting and show values from datapoints in and around the house. It is the perfect device for that, since I bought it with three bars and a display. I connected it to my MQTT server, which I had to reconfigure a bit to support websockets, and configured the buttons and display items.
+I bought a [Button+](https://button.plus/) a few months ago as a pre-order. The goal was to display the household agenda, control the lighting and show values from data points in and around the house. It is the perfect device for that, I bought it with three bars and a display so I have plenty of options to show the data. I connected it to my MQTT server, which I had to reconfigure a bit to support websockets, and configured the buttons and display items.
+
+![Button+ outcome 2](images/buttonplus-2.png)
 
 ### How I publish information to display on the device
 
@@ -39,8 +41,8 @@ This is where Node-RED comes into play. I already use Node-RED for almost all of
 
 The Button+ is constantly listening to what you write to its topics. By default every button you configure has its own topics for the label, value, LED, LED color, etc. By combining various sensor values you can, for example, display both the state and unit of measure on a button.
 
-![Node-RED flow](images/nodered-1.png)
-![Button+ outcome](images/buttonplus-1.jpg)
+![Node-RED flow 1](images/nodered-1.png)
+![Button+ outcome 1](images/buttonplus-1.jpg)
 
 Because I was repeating code a lot I decided to make subflows with exposed variables to easily control the device. That already made the flows cleaner, but it still felt like plumbing I had to copy around. Every button update needed the same topic structure, every LED action needed the same MQTT messages, and every SVG or label update had to be wired by hand.
 
@@ -59,15 +61,18 @@ The most useful part for me is that node configuration and incoming `msg` proper
 
 For click events I also added output properties, inspired by the Home Assistant nodes for Node-RED. You can decide what is sent on `msg.payload`, add metadata like the device, page and button, or include debug information with the MQTT messages that were received or sent. This makes the node useful both for simple automations and for debugging more complex flows.
 
-### Rendering larger SVG's
+### Rendering larger SVGs
 
 In my homelab I use [EVCC](https://evcc.io/) as energy manager. It controls and visualizes the energy flow between solar, the house, the grid, my car charger and in the future the battery. One thing I really like about EVCC is the energy flow view: it gives you a quick overview of where the power is coming from and where it is going. I wanted to recreate that same idea on the Button+ display, so I could see the current energy flow without opening the EVCC dashboard.
 
-My first approach was to generate one large SVG in Node-RED and publish it to a single Button+ display item. That worked for smaller tests, but the SVG quickly became too large once I added the bar, labels, icons and flow lines. The Button+ has a practical size limit for a single SVG payload, so the full EVCC-style render did not fit in one item.
+My first approach was to generate one large SVG in Node-RED and publish it to a single Button+ display item. That worked for smaller tests, but the SVG quickly became too large once I added the bar, labels, icons and flow lines. The current Button+ firmware renders SVGs at a fixed size per item, so the full EVCC-style render did not fit in one item.
 
-I solved this by rendering the energy flow as one virtual SVG canvas in Node-RED and slicing it into multiple smaller SVG's for the Button+. The function node builds a `288x96` view made out of twelve `48x48` panels: six columns and two rows. Each returned message gets its own `item`, `row`, `col` and `svg` property. The SVG itself uses a different `viewBox` per panel, so every Button+ display item only receives a small piece of the larger drawing.
+I solved this by rendering the energy flow as one virtual SVG canvas in Node-RED and slicing it into multiple smaller SVGs for the Button+. The function node builds a `288x96` view made out of twelve `48x48` panels: six columns and two rows. Each returned message gets its own `item`, `row`, `col` and `svg` property. The SVG itself uses a different `viewBox` per panel, so every Button+ display item only receives a small piece of the larger drawing.
 
 This keeps the visual result as one continuous EVCC-like energy flow, while the Button+ only has to render twelve small SVG payloads instead of one large one. The Button+ update display node then publishes each `msg.svg` to the correct display item. The actual automation can stay focused on the data: read the Home Assistant sensor values, normalize W and kW, calculate import/export and battery charge/discharge, generate the SVG pieces and send them to the Button+ nodes.
+
+![Node-RED flow 2](images/nodered-2.png)
+![Button+ outcome 3](images/buttonplus-3.png)
 
 This is the function node that creates the energy flow. It expects the Home Assistant values on `msg.pv`, `msg.home`, `msg.charger`, `msg.grid` and optionally `msg.battery`, then returns twelve messages for the twelve Button+ display items.
 
@@ -369,3 +374,5 @@ After restarting Node-RED the Button+ nodes are available in the palette. The re
 ### What's next?
 
 For now the module covers the parts I use most: button presses, labels, display items, LED feedback, page switching and brightness. I will keep extending the project while I configure my Button+ device, feel free to participate on the project or contact me if you have questions about the project.
+
+**Update 20-06-2026:** after sharing this approach in issue 334 on the [Button+ support issues page](https://button.plus/support/issues), the maker of Button+ mentioned that an upcoming firmware update should make larger SVG rendering possible by reading the `width` and `height` attributes from the SVG tag. That would remove the need to split the image into separate display items. Once that update is available I will adjust my Node-RED code for it and write a follow-up post about the simpler approach.
