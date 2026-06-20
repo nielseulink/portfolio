@@ -8,13 +8,13 @@ published_at: "2026-06-18"
 tags: [Smarthome, EVCC, Button+, Node-RED, MQTT]
 ---
 
-I bought a [Button+](https://button.plus/) a few months ago as a pre-order. The goal was to display the household agenda, control the lighting and show values from data points in and around the house. It is the perfect device for that, I bought it with three bars and a display so I have plenty of options to show the data. I connected it to my MQTT server, which I had to reconfigure a bit to support websockets, and configured the buttons and display items.
+I bought a [Button+](https://button.plus/) a few months ago as a pre-order. The goal was to display the household agenda, control the lighting and show values from data points in and around the house. It is the perfect device for that. I bought it with three bars and a display, so I have plenty of options to show the data. I connected it to my MQTT server, which I had to reconfigure a bit to support WebSockets, and configured the buttons and display items.
 
 ![Button+ outcome 2](images/buttonplus-2.png)
 
 ### How I publish information to display on the device
 
-The device works with information published via MQTT. Since I was already running an MQTT server this wasn't a big deal for me. The device can display existing MQTT topics and you can publish data to the topics of the device itself to show data on it. Since I used my MQTT server only for connecting services together, for example Zigbee2MQTT and my Itho Daalderop heat recovery system, I wasn't sure how to publish the Home Assistant data to MQTT so it could be used by the Button+. I ended up using the MQTT statestream integration, which is only available in YAML.
+The device works with information published via MQTT. Since I was already running an MQTT server, this wasn't a big deal for me. The device can display existing MQTT topics and you can publish data to the topics of the device itself to show data on it. Since I used my MQTT server only for connecting services together, for example Zigbee2MQTT and my Itho Daalderop heat recovery system, I wasn't sure how to publish the Home Assistant data to MQTT so it could be used by the Button+. I ended up using the MQTT statestream integration, which is only available in YAML.
 
 I decided to do all this configuration in a separate file like I do with all the custom YAML I use in Home Assistant. I added `mqtt_statestream: !include mqtt_statestream.yaml` to my `configuration.yaml` and created the separate configuration file (`mqtt_statestream.yaml`):
 
@@ -33,18 +33,18 @@ include:
     - sensor.energie...
 ```
 
-With this configured Home Assistant streams the state of the configured entities and domains to an MQTT topic. For example, the state of `sensor.energie_zelfvoorzienend` is published to the MQTT topic `homeassistant/statestream/sensor/energie_zelfvoorzienend/state`. This topic can be configured in the Button+ to display the value. The downside of this approach is that you cannot combine topics in the Button+, for example the state and unit of measure. At least not on the buttons; display items do have a unit option that can be set to an MQTT topic.
+With this configured, Home Assistant streams the state of the configured entities and domains to an MQTT topic. For example, the state of `sensor.energie_zelfvoorzienend` is published to the MQTT topic `homeassistant/statestream/sensor/energie_zelfvoorzienend/state`. This topic can be configured in the Button+ to display the value. The downside of this approach is that you cannot combine topics in the Button+, for example the state and unit of measure. At least not on the buttons; display items do have a unit option that can be set to an MQTT topic.
 
 ### Node-RED
 
 This is where Node-RED comes into play. I already use Node-RED for almost all of my automations, as it is much stronger than the built-in automation builder for Home Assistant. At least the last time I tried it, a couple of years ago... I know, it has improved a lot!
 
-The Button+ is constantly listening to what you write to its topics. By default every button you configure has its own topics for the label, value, LED, LED color, etc. By combining various sensor values you can, for example, display both the state and unit of measure on a button.
+The Button+ is constantly listening to what you write to its topics. By default, every button you configure has its own topics for the label, value, LED, LED color, etc. By combining various sensor values you can, for example, display both the state and unit of measure on a button.
 
 ![Node-RED flow 1](images/nodered-1.png)
 ![Button+ outcome 1](images/buttonplus-1.jpg)
 
-Because I was repeating code a lot I decided to make subflows with exposed variables to easily control the device. That already made the flows cleaner, but it still felt like plumbing I had to copy around. Every button update needed the same topic structure, every LED action needed the same MQTT messages, and every SVG or label update had to be wired by hand.
+Because I was repeating code a lot, I decided to make subflows with exposed variables to easily control the device. That already made the flows cleaner, but it still felt like plumbing I had to copy around. Every button update needed the same topic structure, every LED action needed the same MQTT messages, and every SVG or label update had to be wired by hand.
 
 ### Turning the subflows into a Node-RED module
 
@@ -369,10 +369,10 @@ The module is published as [`@nielseulink/node-red-contrib-buttonplus`](https://
 npm install @nielseulink/node-red-contrib-buttonplus
 ```
 
-After restarting Node-RED the Button+ nodes are available in the palette. The repository also includes an example flow that shows the shared config node, a button click node, LED feedback and debug output.
+After restarting Node-RED, the Button+ nodes are available in the palette. The repository also includes an example flow that shows the shared config node, a button click node, LED feedback and debug output.
 
 ### What's next?
 
-For now the module covers the parts I use most: button presses, labels, display items, LED feedback, page switching and brightness. I will keep extending the project while I configure my Button+ device, feel free to participate on the project or contact me if you have questions about the project.
+For now the module covers the parts I use most: button presses, labels, display items, LED feedback, page switching and brightness. I will keep extending the project while I configure my Button+ device. Feel free to participate in the project, or contact me if you have questions.
 
-**Update 20-06-2026:** after sharing this approach in issue 334 on the [Button+ support issues page](https://button.plus/support/issues), the maker of Button+ mentioned that an upcoming firmware update should make larger SVG rendering possible by reading the `width` and `height` attributes from the SVG tag. That would remove the need to split the image into separate display items. Once that update is available I will adjust my Node-RED code for it and write a follow-up post about the simpler approach.
+**Update 20-06-2026:** After sharing this approach in issue 334 on the [Button+ support issues page](https://button.plus/support/issues), the maker of Button+ mentioned that an upcoming firmware update should make larger SVG rendering possible by reading the `width` and `height` attributes from the SVG tag. That would remove the need to split the image into separate display items. Once that update is available I will adjust my Node-RED code for it and write a follow-up post about the simpler approach.
