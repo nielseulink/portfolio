@@ -107,6 +107,46 @@ function copyCode(rawText) {
         .catch(() => showCopyErrorToast());
 }
 
+function lineCount(rawText) {
+    if (rawText === '') {
+        return 0;
+    }
+
+    return rawText.split('\n').length;
+}
+
+function makeCollapsible(figure, rawText) {
+    const totalLines = lineCount(rawText);
+    const collapsedLineLimit = 10;
+
+    if (totalLines <= collapsedLineLimit) {
+        return;
+    }
+
+    figure.classList.add('is-collapsed');
+    figure.dataset.collapsible = 'true';
+    figure.dataset.totalLines = String(totalLines);
+
+    const footer = document.createElement('div');
+    footer.className = 'code-block-footer';
+
+    const expandButton = document.createElement('button');
+    expandButton.type = 'button';
+    expandButton.className = 'code-block-expand';
+    expandButton.textContent = `Show all ${totalLines} lines`;
+
+    expandButton.addEventListener('click', () => {
+        const isCollapsed = figure.classList.toggle('is-collapsed');
+
+        expandButton.textContent = isCollapsed
+            ? `Show all ${totalLines} lines`
+            : 'Show less';
+    });
+
+    footer.append(expandButton);
+    figure.append(footer);
+}
+
 async function enhanceCodeBlocks(root = document) {
     await ensureLineNumbersPlugin();
 
@@ -149,6 +189,8 @@ async function enhanceCodeBlocks(root = document) {
         if (typeof hljs.lineNumbersBlock === 'function') {
             hljs.lineNumbersBlock(code);
         }
+
+        makeCollapsible(figure, rawText);
     });
 }
 

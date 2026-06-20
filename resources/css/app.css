@@ -81,6 +81,38 @@
             @apply rounded-md px-2 py-1 font-medium text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-zinc-100;
         }
 
+        & .code-block-footer {
+            @apply flex justify-center border-t border-zinc-200 bg-zinc-100 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800;
+        }
+
+        & .code-block-expand {
+            @apply rounded-md px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-zinc-100;
+        }
+
+        & .code-block.is-collapsed pre {
+            @apply relative;
+        }
+
+        & .code-block.is-collapsed pre::after {
+            content: '';
+            position: absolute;
+            inset-inline: 0;
+            bottom: 0;
+            height: 3rem;
+            pointer-events: none;
+            background: linear-gradient(to bottom, transparent, #282c34);
+        }
+
+        & .code-block.is-collapsed pre code.hljs table.hljs-ln tbody tr:nth-child(n + 11) {
+            display: none;
+        }
+
+        & .code-block.is-collapsed pre code:not(.hljs) {
+            display: block;
+            max-height: calc(0.875rem * 1.625 * 10 + 2rem);
+            overflow: hidden;
+        }
+
         & pre {
             @apply m-0 overflow-x-auto bg-[#282c34] p-0 text-sm;
         }
