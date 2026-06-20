@@ -8,7 +8,8 @@ test('home page is accessible', function () {
     $this->get(route('home'))
         ->assertSuccessful()
         ->assertSee('Hello')
-        ->assertSee('Niels Eulink');
+        ->assertSee('Niels Eulink')
+        ->assertSee('favicon.svg', false);
 });
 
 test('blog index page is accessible', function () {
