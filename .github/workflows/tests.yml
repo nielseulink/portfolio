@@ -1,0 +1,162 @@
+name: Tests
+
+on:
+  pull_request:
+    # ready_for_review starts the run a draft skipped.
+    types: [opened, synchronize, reopened, ready_for_review]
+  # No run on push to main: main only takes PRs that are up to date with main and passed these checks, so main gets
+  # exactly the tree the PR run tested. Start a run by hand to test main itself.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.4'
+  PHP_EXTENSIONS: intl, pdo_sqlite, zip
+
+jobs:
+  changes:
+    name: Changes
+    # Pint and Pest are required checks, so a skipped workflow would leave them pending. This job decides whether they
+    # run instead: a skipped job counts as passed. Draft PRs and PRs that only touch agent instructions and root Markdown
+    # skip them, and Pest skips PRs that only change CSS or workflow files the tests do not use. The skip lists name what
+    # cannot affect the tests, so a path nobody thought of runs them instead of skipping them. Manual runs always test.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      run-tests: ${{ steps.decide.outputs.run-tests }}
+      run-pest: ${{ steps.decide.outputs.run-pest }}
+
+    steps:
+      - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+        with:
+          # The merge commit and its parents: the first parent is the base branch.
+          fetch-depth: 2
+
+      - name: Decide whether to run the tests
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          IGNORED_PATHS: '^([^/]+\.md|\.ai/.*|\.agents/.*|\.claude/.*|\.codex/.*|\.cursor/.*|boost\.json|opencode\.json|\.mcp\.json)$'
+          PEST_SKIP_PATHS: '^(\.github/dependabot\.yml|resources/css/.*)$'
+        run: |
+          run_tests=true
+          run_pest=true
+
+          if [ "$EVENT_NAME" = 'pull_request' ] && [ "$IS_DRAFT" = 'true' ]; then
+            run_tests=false
+            echo 'Draft PR: the tests run once the PR is ready for review.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$EVENT_NAME" = 'pull_request' ]; then
+            # Separately, so a failing git diff fails this job and the checks run, instead of an empty list skipping them.
+            files=$(git diff --name-only HEAD^1 HEAD)
+            changed=$(printf '%s\n' "$files" | grep -vE "$IGNORED_PATHS" || true)
+
+            if [ -z "$changed" ]; then
+              run_tests=false
+              echo 'Only agent instructions or root Markdown changed: the tests are skipped.' >> "$GITHUB_STEP_SUMMARY"
+            elif ! printf '%s\n' "$changed" | grep -qvE "$PEST_SKIP_PATHS"; then
+              run_pest=false
+              echo 'Only CSS or unused workflow files changed: Pest is skipped.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+          echo "run-tests=$run_tests" >> "$GITHUB_OUTPUT"
+          echo "run-pest=$run_pest" >> "$GITHUB_OUTPUT"
+
+  pint:
+    name: Pint
+    needs: changes
+    # Runs unless the changes job decided otherwise, so a failing changes job never skips the required checks.
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.changes.outputs.run-tests != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # vendor itself as well, so an unchanged composer.lock makes the install a quick check instead of an unpack.
+      - name: Cache Composer packages
+        uses: actions/cache@v6
+        with:
+          path: |
+            vendor
+            ~/.composer/cache
+          key: composer-vendor-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-vendor-${{ runner.os }}-
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+
+      - name: Install Composer dependencies
+        env:
+          # The Flux Pro credentials, without writing auth.json into the workspace.
+          COMPOSER_AUTH: ${{ format('{{"http-basic":{{"composer.fluxui.dev":{{"username":{0},"password":{1}}}}}}}', toJSON(secrets.FLUX_USERNAME), toJSON(secrets.FLUX_LICENSE_KEY)) }}
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Check code style of changed files
+        run: vendor/bin/pint --test --diff=origin/${{ github.base_ref }}
+
+  tests:
+    name: Pest
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.run-tests != 'false' && needs.changes.outputs.run-pest != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Create environment file
+        run: cp .env.example .env
+
+      # vendor itself as well, so an unchanged composer.lock makes the install a quick check instead of an unpack.
+      - name: Cache Composer packages
+        uses: actions/cache@v6
+        with:
+          path: |
+            vendor
+            ~/.composer/cache
+          key: composer-vendor-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-vendor-${{ runner.os }}-
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+
+      - name: Install Composer dependencies
+        env:
+          # The Flux Pro credentials, without writing auth.json into the workspace.
+          COMPOSER_AUTH: ${{ format('{{"http-basic":{{"composer.fluxui.dev":{{"username":{0},"password":{1}}}}}}}', toJSON(secrets.FLUX_USERNAME), toJSON(secrets.FLUX_LICENSE_KEY)) }}
+        run: composer install --no-interaction --no-progress
+
+      - name: Generate application key
+        run: php artisan key:generate --no-interaction
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run tests
+        run: composer test
