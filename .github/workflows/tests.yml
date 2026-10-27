@@ -15,8 +15,10 @@ concurrency:
 permissions:
   contents: read
 
-# All jobs run on Blacksmith. Blacksmith has no prebuilt PHP 8.4 (setup-php spends minutes on apt), so PHP runs there
-# in webdevops/php, which is rebuilt daily and has all our extensions.
+env:
+  PHP_VERSION: '8.4'
+  PHP_EXTENSIONS: intl, pdo_sqlite, zip
+
 jobs:
   changes:
     name: Changes
@@ -24,7 +26,7 @@ jobs:
     # run instead: a skipped job counts as passed. Draft PRs and PRs that only touch agent instructions and root Markdown
     # skip them, and Pest skips PRs that only change CSS or workflow files the tests do not use. The skip lists name what
     # cannot affect the tests, so a path nobody thought of runs them instead of skipping them. Manual runs always test.
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     outputs:
@@ -74,7 +76,7 @@ jobs:
     needs: changes
     # Runs unless the changes job decided otherwise, so a failing changes job never skips the required checks.
     if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.changes.outputs.run-tests != 'false' }}
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -88,26 +90,30 @@ jobs:
         with:
           path: |
             vendor
-            /tmp/composer-cache
+            ~/.composer/cache
           key: composer-vendor-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-vendor-${{ runner.os }}-
 
-      - uses: ./.github/actions/php-container
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
 
       - name: Install Composer dependencies
         env:
           # The Flux Pro credentials, without writing auth.json into the workspace.
           COMPOSER_AUTH: ${{ format('{{"http-basic":{{"composer.fluxui.dev":{{"username":{0},"password":{1}}}}}}}', toJSON(secrets.FLUX_USERNAME), toJSON(secrets.FLUX_LICENSE_KEY)) }}
-        run: docker exec -e COMPOSER_AUTH php composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Check code style of changed files
-        run: $PHP vendor/bin/pint --test --diff=origin/${{ github.base_ref }}
+        run: vendor/bin/pint --test --diff=origin/${{ github.base_ref }}
 
   tests:
     name: Pest
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.run-tests != 'false' && needs.changes.outputs.run-pest != 'false' }}
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -127,20 +133,24 @@ jobs:
         with:
           path: |
             vendor
-            /tmp/composer-cache
+            ~/.composer/cache
           key: composer-vendor-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-vendor-${{ runner.os }}-
 
-      - uses: ./.github/actions/php-container
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
 
       - name: Install Composer dependencies
         env:
           # The Flux Pro credentials, without writing auth.json into the workspace.
           COMPOSER_AUTH: ${{ format('{{"http-basic":{{"composer.fluxui.dev":{{"username":{0},"password":{1}}}}}}}', toJSON(secrets.FLUX_USERNAME), toJSON(secrets.FLUX_LICENSE_KEY)) }}
-        run: docker exec -e COMPOSER_AUTH php composer install --no-interaction --no-progress
+        run: composer install --no-interaction --no-progress
 
       - name: Generate application key
-        run: $PHP php artisan key:generate --no-interaction
+        run: php artisan key:generate --no-interaction
 
       - name: Install npm dependencies
         run: npm ci
@@ -149,4 +159,4 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: $PHP composer test
+        run: composer test
