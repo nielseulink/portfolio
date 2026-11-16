@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'github' => [
+        // Optional: raises the GitHub API rate limit. A token without access to private repositories is enough.
+        'token' => env('GITHUB_TOKEN'),
+    ],
+
 ];

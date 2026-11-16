@@ -5,18 +5,18 @@ namespace App\Services\Projects;
 class ProjectRepository
 {
     /**
-     * @return list<array{name: string, description: string, url: string, link_label?: string, tags: list<string>}>
+     * @return list<array{name: string, description: string, url?: string, repository?: string, status?: 'coming-soon', link_label?: string, tags: list<string>}>
      */
     public function all(): array
     {
-        /** @var list<array{name: string, description: string, url: string, link_label?: string, tags: list<string>}> $projects */
+        /** @var list<array{name: string, description: string, url?: string, repository?: string, status?: 'coming-soon', link_label?: string, tags: list<string>}> $projects */
         $projects = config('site.projects', []);
 
         return $projects;
     }
 
     /**
-     * @return list<array{name: string, description: string, url: string, link_label?: string, tags: list<string>}>
+     * @return list<array{name: string, description: string, url?: string, repository?: string, status?: 'coming-soon', link_label?: string, tags: list<string>}>
      */
     public function filtered(?string $tag = null): array
     {
