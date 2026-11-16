@@ -86,7 +86,9 @@ test('blog show page stores blog slug', function () {
         ->and($view->path)->toBe('/blog/'.$slug);
 });
 
-test('analytics dashboard is accessible without laravel auth', function () {
+test('analytics dashboard shows stats with the configured credentials', function () {
+    config(['analytics.dashboard' => ['username' => 'niels', 'password' => 'secret']]);
+
     PageView::query()->create([
         'visitor_key' => (string) Str::uuid(),
         'route_name' => 'home',
@@ -95,15 +97,42 @@ test('analytics dashboard is accessible without laravel auth', function () {
         'viewed_at' => now(),
     ]);
 
-    $this->get(route('analytics'))
+    $this->withBasicAuth('niels', 'secret')
+        ->get(route('analytics'))
         ->assertSuccessful()
         ->assertSee('Analytics')
         ->assertSee('Page views (all time)')
         ->assertSee('1');
 });
 
+test('analytics dashboard asks for credentials', function (?string $username, ?string $password) {
+    config(['analytics.dashboard' => ['username' => 'niels', 'password' => 'secret']]);
+
+    $request = $username === null ? $this : $this->withBasicAuth($username, $password);
+
+    $request->get(route('analytics'))
+        ->assertUnauthorized()
+        ->assertHeader('WWW-Authenticate')
+        ->assertDontSee('Page views (all time)');
+})->with([
+    'no credentials' => [null, null],
+    'wrong password' => ['niels', 'wrong'],
+    'wrong username' => ['someone', 'secret'],
+]);
+
+test('analytics dashboard does not exist without configured credentials', function () {
+    config(['analytics.dashboard' => ['username' => null, 'password' => null]]);
+
+    $this->withBasicAuth('', '')
+        ->get(route('analytics'))
+        ->assertNotFound();
+});
+
 test('analytics dashboard is not tracked as a page view', function () {
-    $this->get(route('analytics'))
+    config(['analytics.dashboard' => ['username' => 'niels', 'password' => 'secret']]);
+
+    $this->withBasicAuth('niels', 'secret')
+        ->get(route('analytics'))
         ->assertSuccessful();
 
     expect(PageView::query()->count())->toBe(0);
