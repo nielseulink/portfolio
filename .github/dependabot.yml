@@ -7,6 +7,9 @@ registries:
     username: ${{ secrets.FLUX_USERNAME }}
     password: ${{ secrets.FLUX_LICENSE_KEY }}
 
+# main only takes PRs that are up to date with it, and auto-merge does not update a PR that fell behind. Composer and
+# npm run on different days so their PRs do not wait on each other. Patch and minor updates are merged automatically
+# (see workflows/dependabot-auto-merge.yml); majors stay separate PRs for review.
 updates:
   - package-ecosystem: composer
     directory: /
@@ -18,19 +21,30 @@ updates:
     open-pull-requests-limit: 5
     groups:
       composer-minor-and-patch:
+        applies-to: version-updates
         update-types: [minor, patch]
+      composer-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-      day: monday
+      day: tuesday
     open-pull-requests-limit: 5
     groups:
       npm-minor-and-patch:
+        applies-to: version-updates
         update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      github-actions:
+        patterns: ['*']
