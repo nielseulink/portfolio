@@ -8,6 +8,14 @@ return [
 
     'visitor_key_ttl_minutes' => (int) env('ANALYTICS_VISITOR_KEY_TTL_MINUTES', 60),
 
+    /*
+     * HTTP basic auth for /analytics. The dashboard returns 404 while either value is empty.
+     */
+    'dashboard' => [
+        'username' => env('ANALYTICS_DASHBOARD_USERNAME'),
+        'password' => env('ANALYTICS_DASHBOARD_PASSWORD'),
+    ],
+
     'tracked_routes' => [
         'home',
         'projects',
