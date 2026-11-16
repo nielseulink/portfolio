@@ -4,8 +4,6 @@ use App\Livewire\Pages\Blog\Index as BlogIndex;
 use App\Livewire\Pages\Projects;
 use Livewire\Livewire;
 
-beforeEach(fn () => fakeGitHub());
-
 test('home page is accessible', function () {
     $this->get(route('home'))
         ->assertSuccessful()

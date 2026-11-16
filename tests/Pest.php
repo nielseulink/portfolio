@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -17,7 +19,7 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
  // ->use(RefreshDatabase::class)
-    ->beforeEach(fn () => Http::preventStrayRequests())
+    ->beforeEach(fn () => fakeGitHub())
     ->in('Feature');
 
 /*
@@ -47,7 +49,26 @@ expect()->extend('toBeOne', function () {
 */
 
 /**
- * Fakes the GitHub API with the public repositories in config/site.php and merged pull requests in livewire/livewire,
+ * Replaces the HTTP fake of the test, so a test can swap the default GitHub fake for its own. Requests without a fake
+ * fail the test.
+ */
+function resetHttpFake(): void
+{
+    Http::swap(new Factory(app(Dispatcher::class)));
+    Http::preventStrayRequests();
+}
+
+/**
+ * Fakes GitHub as unavailable: every request gets the given response.
+ */
+function fakeGitHubOutage(mixed $response): void
+{
+    resetHttpFake();
+    Http::fake(['api.github.com/*' => $response]);
+}
+
+/**
+ * Every feature test starts with this fake. Fakes the GitHub API with the public repositories in config/site.php and merged pull requests in livewire/livewire,
  * Koenkk/zigbee-herdsman-converters, the fork someone/zigbee-herdsman-converters and Eagle-SCM/Website. Entries in $responses replace or add URL patterns.
  *
  * @param  array<string, mixed>  $responses
@@ -70,6 +91,8 @@ function fakeGitHub(array $responses = []): void
         'repository_url' => "https://api.github.com/repos/{$repository}",
         'pull_request' => ['merged_at' => $mergedAt],
     ];
+
+    resetHttpFake();
 
     // Same keys replace the defaults in place; new keys are added at the end.
     Http::fake([

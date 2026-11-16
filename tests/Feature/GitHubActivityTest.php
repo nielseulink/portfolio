@@ -4,8 +4,6 @@ use App\Services\GitHub\GitHubActivity;
 use Illuminate\Support\Facades\Http;
 
 test('projects page shows github stats for public repositories', function () {
-    fakeGitHub();
-
     $this->get(route('projects'))
         ->assertSuccessful()
         ->assertSee('v1.0.6')
@@ -15,8 +13,6 @@ test('projects page shows github stats for public repositories', function () {
 });
 
 test('projects that are not open source yet have no link', function () {
-    fakeGitHub();
-
     $this->get(route('projects'))
         ->assertSuccessful()
         ->assertSee('Deelwaarder')
@@ -30,8 +26,6 @@ test('projects that are not open source yet have no link', function () {
 });
 
 test('projects page lists merged contributions grouped per repository', function () {
-    fakeGitHub();
-
     $this->get(route('projects'))
         ->assertSuccessful()
         ->assertSee('Open source contributions')
@@ -47,8 +41,6 @@ test('projects page lists merged contributions grouped per repository', function
 });
 
 test('contributions to forks are left out', function () {
-    fakeGitHub();
-
     $this->get(route('projects'))
         ->assertSuccessful()
         ->assertDontSee('someone/zigbee-herdsman-converters')
@@ -73,8 +65,6 @@ test('contributions to private repositories are left out', function () {
 });
 
 test('home page shows the most recent github activity', function () {
-    fakeGitHub();
-
     $this->get(route('home'))
         ->assertSuccessful()
         ->assertSee('Recent on GitHub')
@@ -83,8 +73,6 @@ test('home page shows the most recent github activity', function () {
 });
 
 test('github results are cached between requests', function () {
-    fakeGitHub();
-
     $this->get(route('projects'))->assertSuccessful();
     $sentAfterFirstRequest = count(Http::recorded());
 
@@ -96,7 +84,7 @@ test('github results are cached between requests', function () {
 });
 
 test('pages still render when github is unavailable', function (string $failure) {
-    Http::fake(['api.github.com/*' => $failure === 'connection' ? Http::failedConnection() : Http::response(null, 503)]);
+    fakeGitHubOutage($failure === 'connection' ? Http::failedConnection() : Http::response(null, 503));
 
     $this->get(route('projects'))
         ->assertSuccessful()
@@ -109,7 +97,7 @@ test('pages still render when github is unavailable', function (string $failure)
 })->with(['connection', 'server error']);
 
 test('a failed github request is not retried on every page view', function () {
-    Http::fake(['api.github.com/*' => Http::response(null, 503)]);
+    fakeGitHubOutage(Http::response(null, 503));
 
     $this->get(route('projects'))->assertSuccessful();
     $sentAfterFirstRequest = count(Http::recorded());
