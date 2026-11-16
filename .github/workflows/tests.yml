@@ -46,7 +46,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           IS_DRAFT: ${{ github.event.pull_request.draft }}
           IGNORED_PATHS: '^([^/]+\.md|\.ai/.*|\.agents/.*|\.claude/.*|\.codex/.*|\.cursor/.*|boost\.json|opencode\.json|\.mcp\.json)$'
-          PEST_SKIP_PATHS: '^(\.github/dependabot\.yml|resources/css/.*)$'
+          PEST_SKIP_PATHS: '^(\.github/dependabot\.yml|\.github/workflows/dependabot-auto-merge\.yml|resources/css/.*)$'
         run: |
           run_tests=true
           run_pest=true
