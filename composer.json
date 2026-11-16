@@ -12,7 +12,7 @@
         "php": "^8.3",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
-        "livewire/blaze": "1.0.12",
+        "livewire/blaze": "1.0.21",
         "livewire/flux": "*",
         "livewire/flux-pro": "^2.14",
         "symfony/yaml": "^8.1"
