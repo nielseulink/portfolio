@@ -59,4 +59,35 @@
             </div>
         @endif
     </section>
+
+    @if ($recentGitHubActivity !== [])
+        <section class="space-y-6">
+            <div class="flex items-center justify-between gap-4">
+                <flux:heading size="lg" level="2">Recent on GitHub</flux:heading>
+                <flux:button :href="route('projects')" wire:navigate variant="ghost" size="sm">
+                    All projects
+                </flux:button>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                @foreach ($recentGitHubActivity as $item)
+                    <flux:card class="flex h-full flex-col gap-4">
+                        <flux:heading size="lg" level="3">
+                            <flux:link :href="$item->url" target="_blank" rel="noopener noreferrer" variant="ghost">
+                                {{ $item->name }}
+                            </flux:link>
+                        </flux:heading>
+
+                        @if ($item->description)
+                            <flux:text class="grow text-base leading-relaxed text-zinc-800 dark:text-zinc-200">
+                                {{ $item->description }}
+                            </flux:text>
+                        @endif
+
+                        <x-github-stats :stars="$item->stars" :label="$item->activityLabel" :at="$item->activityAt" />
+                    </flux:card>
+                @endforeach
+            </div>
+        </section>
+    @endif
 </div>

@@ -12,12 +12,11 @@ test('project repository returns configured projects', function () {
 test('project repository filters projects by tag', function () {
     $projects = (new ProjectRepository)->filtered('Python');
 
-    expect($projects)->toHaveCount(1)
-        ->and($projects[0]['name'])->toBe('HA PSA Car Controller');
+    expect(array_column($projects, 'name'))->toBe(['HA PSA Car Controller', 'APsystems ECU for Home Assistant']);
 });
 
 test('project repository returns unique sorted tags', function () {
     $tags = (new ProjectRepository)->tags();
 
-    expect($tags)->toBe(['Button+', 'Flux UI', 'HACS', 'Home Assistant', 'JavaScript', 'Laravel', 'Livewire', 'MQTT', 'Node-RED', 'Python', 'Smarthome']);
+    expect($tags)->toBe(['Button+', 'Energy', 'Flux UI', 'HACS', 'Home Assistant', 'JavaScript', 'Laravel', 'Livewire', 'MCP', 'MQTT', 'Modbus', 'Node-RED', 'Python', 'Smarthome']);
 });
